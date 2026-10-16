@@ -9,6 +9,14 @@
  */
 
 declare global {
+    /**
+     * A namespace, not an ES module, because this is Cypress's own documented
+     * augmentation point: `Chainable` lives in `namespace Cypress`, and
+     * declaration merging only works against the same construct. Rewriting it
+     * as a module declaration makes the custom commands invisible to the
+     * compiler, so `cy.login()` becomes a type error everywhere.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace Cypress {
         interface Chainable {
             /** Log in through the form and wait for the secure area. */
@@ -26,8 +34,12 @@ declare global {
 
 Cypress.Commands.add(
     'login',
-    (username = Cypress.env('APP_USERNAME') ?? 'tomsmith',
-     password = Cypress.env('APP_PASSWORD') ?? 'SuperSecretPassword!') => {
+    (
+        // `Cypress.env` is typed `any`, so without the cast every downstream
+        // use of these two values is unchecked.
+        username = (Cypress.env('APP_USERNAME') as string | undefined) ?? 'tomsmith',
+        password = (Cypress.env('APP_PASSWORD') as string | undefined) ?? 'SuperSecretPassword!',
+    ) => {
         cy.visit('/login');
         cy.get('#username').type(username);
         // `log: false` keeps the password out of the command log and the

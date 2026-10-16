@@ -10,11 +10,11 @@ from documentation.
 
 ## Prerequisites
 
-| Requirement | Notes |
-|---|---|
-| **Node.js 20.18.1+** | pinned to 22 in `.nvmrc` |
-| **Cypress binary** | downloaded by `npm ci` into `~/.cache/Cypress` (~300 MB) |
-| **Network access** | `the-internet.herokuapp.com` |
+| Requirement          | Notes                                                    |
+| -------------------- | -------------------------------------------------------- |
+| **Node.js 20.18.1+** | pinned to 22 in `.nvmrc`                                 |
+| **Cypress binary**   | downloaded by `npm ci` into `~/.cache/Cypress` (~300 MB) |
+| **Network access**   | `the-internet.herokuapp.com`                             |
 
 No Docker, no local services, no seed step.
 
@@ -63,12 +63,12 @@ a question that comes up in interviews and is usually answered from blog posts:
 
 Each spec is one half of that answer.
 
-| Spec | Tests | Theme |
-|---|---|---|
-| `auth` | 6 | the shared baseline — same flow as the WDIO project |
-| `network` | 6 | what Cypress does better: native request control |
-| `limits` | 7 | what Cypress cannot do, and the workarounds |
-| `dynamic` | 8 | retry-ability, and where it stops helping |
+| Spec      | Tests | Theme                                               |
+| --------- | ----- | --------------------------------------------------- |
+| `auth`    | 6     | the shared baseline — same flow as the WDIO project |
+| `network` | 6     | what Cypress does better: native request control    |
+| `limits`  | 7     | what Cypress cannot do, and the workarounds         |
+| `dynamic` | 8     | retry-ability, and where it stops helping           |
 
 ## The architectural difference
 
@@ -129,8 +129,8 @@ when the test runs.
 ### A stubbed response needs a loadable body
 
 Stubbing `/secure` with `body: 'simulated outage'` makes `cy.visit` hang until
-`pageLoadTimeout`, reported as *"timed out waiting for your remote page to
-load"* — which points at the network rather than at the payload. `cy.visit`
+`pageLoadTimeout`, reported as _"timed out waiting for your remote page to
+load"_ — which points at the network rather than at the payload. `cy.visit`
 waits for the document load event, and a bare text body never produces one. The
 fix is valid HTML and a `text/html` content type.
 
@@ -171,3 +171,61 @@ than in every test — the same goal the WebdriverIO project reaches by obtainin
 token over the API.
 
 **Retries are CI-only.** Locally a flake should be seen and fixed.
+
+## Linting and reports
+
+```bash
+npm run lint          # ESLint 9, flat config, type-checked rules
+npm run lint:fix
+npm run format        # Prettier, writes
+npm run format:check  # Prettier, reports (this is what CI runs)
+npm run typecheck     # tsc --noEmit
+```
+
+The Cypress-specific rules earn their keep here more than in any other project
+in this portfolio, because the command queue makes two mistakes easy to write
+and hard to see:
+
+| Rule                                 | What it catches                                                                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cypress/no-assigning-return-values` | `const el = cy.get(...)` does not give you an element — commands are enqueued, not executed. The mistake every Selenium migrant makes once. |
+| `cypress/unsafe-to-chain-command`    | chaining off an action command (`cy.click().type()`) re-queries a detached element                                                          |
+| `cypress/no-async-tests`             | mixing `async/await` with the queue means the body finishes before the commands run                                                         |
+| `cypress/no-unnecessary-waiting`     | `cy.wait(2000)` is the symptom of not having identified the real condition                                                                  |
+
+`cy.wait('@alias')` stays allowed, and is the correct replacement for a fixed
+sleep: it waits on the network event itself.
+
+Two real fixes came out of this:
+
+- `cy.get(...).type(...).should(...)` was split in two. Asserting off the return
+  value of an action command re-queries an element the action may have replaced;
+  when it bites, it bites as a detached-element error that reproduces only under
+  load.
+- `.then(cy.wrap)` passes the command as an unbound method reference. Replaced
+  with `.then((body) => cy.wrap(body))`, which keeps the binding and reads better.
+
+The `namespace Cypress` block in `cypress/support/e2e.ts` keeps an inline
+`no-namespace` disable, with the reason attached: `Chainable` lives in a
+namespace in Cypress's own types, and declaration merging only works against the
+same construct. Rewriting it as a module makes `cy.login()` a type error
+everywhere.
+
+### Reports
+
+Cypress runs Mocha underneath, so it accepts Mocha reporters and ships `spec`,
+`junit` and `teamcity` with no extra dependency. CI uses `junit` and writes
+`reports/junit-[hash].xml`; `spec` locally. The `[hash]` is not decoration —
+Cypress starts a fresh reporter per spec file, so a fixed filename means every
+spec overwrites the last and the report describes only the final file that ran.
+
+### Where this runs in CI
+
+Linting and formatting are their **own job**, not steps inside the test job.
+They need no browser, no network and no secrets, and they finish in seconds, so
+as a separate job they run concurrently with the suite: a formatting failure
+does not wait behind a long test run, and a real test failure is not hidden
+behind a formatting failure. Both verdicts arrive on their own.
+
+CI runs the `--check` variants, never the formatter itself. A pipeline reports
+on the branch it was asked to verify; it does not rewrite it.

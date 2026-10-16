@@ -26,6 +26,26 @@ export default defineConfig({
         specPattern: 'cypress/e2e/**/*.cy.ts',
         supportFile: 'cypress/support/e2e.ts',
 
+        /**
+         * Reporter.
+         *
+         * Cypress runs Mocha under the hood, so it accepts Mocha reporters and
+         * ships `spec`, `junit` and `teamcity` without any extra dependency.
+         * `junit` in CI is what makes a failure appear as a named test in the
+         * GitHub Actions summary rather than as a line in a long log; `spec`
+         * locally, where the console is being watched anyway.
+         *
+         * `[hash]` in the filename is not decoration — Cypress starts a fresh
+         * reporter per spec file, so a fixed name means every spec overwrites
+         * the previous one and the report describes only the last file that
+         * ran.
+         */
+        reporter: process.env.CI ? 'junit' : 'spec',
+        reporterOptions: {
+            mochaFile: 'reports/junit-[hash].xml',
+            toConsole: false,
+        },
+
         viewportWidth: 1440,
         viewportHeight: 900,
 

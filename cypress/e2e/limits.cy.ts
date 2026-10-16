@@ -94,7 +94,7 @@ describe('Framework limits and their workarounds', () => {
         cy.get('#mce_0_ifr')
             .its('0.contentDocument.body')
             .should('not.be.empty')
-            .then(cy.wrap)
+            .then((body: HTMLElement) => cy.wrap(body))
             .should('have.id', 'tinymce')
             .and('contain.text', 'Your content goes here.');
     });
@@ -105,13 +105,19 @@ describe('Framework limits and their workarounds', () => {
         cy.get('#mce_0_ifr')
             .its('0.contentDocument.body')
             .should('not.be.empty')
-            .then(cy.wrap)
-            .clear()
+            .then((body: HTMLElement) => cy.wrap(body))
+            .clear();
+
+        // `.clear()` is an action command, so the chain stops there and the
+        // typing starts from a fresh query.
+        cy.get('#mce_0_ifr')
+            .its('0.contentDocument.body')
+            .then((body: HTMLElement) => cy.wrap(body))
             .type('typed inside the frame');
 
         cy.get('#mce_0_ifr')
             .its('0.contentDocument.body')
-            .then(cy.wrap)
+            .then((body: HTMLElement) => cy.wrap(body))
             .should('contain.text', 'typed inside the frame');
     });
 

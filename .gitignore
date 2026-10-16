@@ -11,3 +11,4 @@ cypress/downloads/
 .idea/
 .vscode/
 *.iml
+reports/

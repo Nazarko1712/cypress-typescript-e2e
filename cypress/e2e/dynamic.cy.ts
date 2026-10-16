@@ -17,7 +17,9 @@ describe('Dynamic rendering', () => {
         cy.get('#start button').click();
 
         // No explicit wait: the assertion drives the retry.
-        cy.get('#finish', { timeout: 15_000 }).should('be.visible').and('have.text', 'Hello World!');
+        cy.get('#finish', { timeout: 15_000 })
+            .should('be.visible')
+            .and('have.text', 'Hello World!');
     });
 
     it('the element does not exist before the action', () => {
@@ -62,7 +64,13 @@ describe('Dynamic rendering', () => {
         cy.get('#input-example button').click();
 
         cy.get('#input-example input', { timeout: 15_000 }).should('be.enabled');
-        cy.get('#input-example input').type('now editable').should('have.value', 'now editable');
+        // Split rather than chained: `.type()` is an action command, and
+        // asserting off its return value re-queries an element that the action
+        // may have replaced. `cypress/unsafe-to-chain-command` flags it, and
+        // the failure mode when it bites is a detached-element error that
+        // reproduces only under load.
+        cy.get('#input-example input').type('now editable');
+        cy.get('#input-example input').should('have.value', 'now editable');
     });
 
     it('waits for a control to be removed from the DOM', () => {
