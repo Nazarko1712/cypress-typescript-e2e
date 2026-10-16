@@ -1,0 +1,24 @@
+{
+  "name": "cypress-typescript-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cypress + TypeScript E2E suite against the same target as the WebdriverIO project, so the framework is the only variable",
+  "engines": {
+    "node": ">=20.18.1"
+  },
+  "scripts": {
+    "test": "cypress run",
+    "test:headed": "cypress run --headed --no-exit",
+    "open": "cypress open",
+    "test:auth": "cypress run --spec 'cypress/e2e/auth.cy.ts'",
+    "test:dynamic": "cypress run --spec 'cypress/e2e/dynamic.cy.ts'",
+    "test:network": "cypress run --spec 'cypress/e2e/network.cy.ts'",
+    "test:limits": "cypress run --spec 'cypress/e2e/limits.cy.ts'",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "cypress": "^13.17.0",
+    "typescript": "^5.7.2"
+  }
+}
