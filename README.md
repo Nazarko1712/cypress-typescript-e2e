@@ -154,10 +154,18 @@ WebdriverIO — relocated rather than removed. `dynamic.cy.ts` asserts both halv
 
 ## Conventions
 
-**Custom commands over repeated steps.** `cy.login()` and `cy.byTestId()` live in
-`cypress/support/e2e.ts`, the equivalent of `browser.addCommand`. Defining the
-test-id attribute in one place means changing the convention is a one-line edit
-rather than a find-and-replace.
+**Custom commands over repeated steps, and no page objects.** `cy.login()` and
+`cy.byTestId()` live in `cypress/support/e2e.ts`, the equivalent of
+`browser.addCommand`. Defining the test-id attribute in one place means changing
+the convention is a one-line edit rather than a find-and-replace.
+
+That is a choice, not an omission. Custom commands are the Cypress-idiomatic
+default: they compose with the command queue and are available everywhere
+without an import, which suits cross-cutting actions. The Page Object Model
+earns its place on long multi-page flows instead — see
+[cypress-javascript-e2e](https://github.com/Nazarko1712/cypress-javascript-e2e),
+which walks a six-screen checkout with page objects, so the two structures can
+be compared with the framework held constant.
 
 **Passwords typed with `{ log: false }`,** so they stay out of the command log
 and out of the screenshots attached to a failure.
